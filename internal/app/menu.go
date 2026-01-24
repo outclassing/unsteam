@@ -1,10 +1,9 @@
-package main
+package app
 
 import (
 	"context"
-	"fmt"
-	"time"
 	"errors"
+
 	"github.com/yarlson/tap"
 )
 
@@ -12,12 +11,12 @@ type Stream struct {
 	*tap.Stream
 }
 
-func showIntro(ctx context.Context) {
-	tap.Intro("untsteam v0.0.1")
-	mainMenu(ctx)
+func ShowIntro(ctx context.Context) {
+	tap.Intro("unsteam v0.0.1")
+	MainMenu(ctx)
 }
 
-func mainMenu(ctx context.Context) {
+func MainMenu(ctx context.Context) {
 	switch tap.Select(ctx, tap.SelectOptions[string]{
 		Message: "Choose an action:",
 		Options: []tap.SelectOption[string]{
@@ -29,16 +28,10 @@ func mainMenu(ctx context.Context) {
 		},
 	}) {
 	case "download":
-		downloadDepot(ctx)
+		DownloadDepot(ctx)
 	case "exit":
 		tap.Outro("Exiting")
 	}
-}
-
-func printDepotInfo(s *Stream, d Depot) {
-	s.WriteLine(fmt.Sprintf("Manifest %s selected", d.ManifestId))
-	s.WriteLine(fmt.Sprintf("Build ID: %s", fmt.Sprint(d.BuildId)))
-	s.WriteLine(fmt.Sprintf("Time updated: %s", time.Unix(d.Time, 0).Format(time.RFC3339)))
 }
 
 func NewStream(msg string) *Stream {
@@ -55,12 +48,12 @@ func (s *Stream) Error(msg string) {
 	s.Stop(msg, -1)
 }
 
-func promptNumeric(ctx context.Context, label string, def string) string {
+func PromptNumeric(ctx context.Context, label string, def string) string {
 	return tap.Text(ctx, tap.TextOptions{
-		Message:      label + ":",
+		Message:     label + ":",
 		Placeholder: def,
 		Validate: func(s string) error {
-			if s == "" || !isNumeric(s) {
+			if s == "" || !IsNumeric(s) {
 				return errors.New("numbers only")
 			}
 			return nil
@@ -68,17 +61,17 @@ func promptNumeric(ctx context.Context, label string, def string) string {
 	})
 }
 
-func confirmation(ctx context.Context, msg string) bool {
+func Confirmation(ctx context.Context, msg string) bool {
 	return tap.Confirm(ctx, tap.ConfirmOptions{
 		Message: msg,
 	})
 }
 
-func message(msg string) {
+func Message(msg string) {
 	tap.Message(msg)
 }
 
-func isNumeric(s string) bool {
+func IsNumeric(s string) bool {
 	for _, c := range s {
 		if c < '0' || c > '9' {
 			return false

@@ -1,13 +1,14 @@
-package main
+package pkg
 
 import (
-	"os"
+	"encoding/json"
 	"io"
 	"net/http"
-	"encoding/json"
+	"os"
+	"unsteam/internal/api"
 )
 
-func fetchJson[T any](url string) (T, error) {
+func FetchJson[T any](url string) (T, error) {
 	var v T
 	resp, err := http.Get(url)
 	if err != nil {
@@ -19,7 +20,7 @@ func fetchJson[T any](url string) (T, error) {
 	return v, err
 }
 
-func downloadToFile(url, path string) error {
+func DownloadToFile(url, path string) error {
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
@@ -31,27 +32,30 @@ func downloadToFile(url, path string) error {
 		return err
 	}
 	defer out.Close()
-	
+
 	_, err = io.Copy(out, resp.Body)
 	return err
 }
 
-func fetchDepotKey(depotId string, token string, path string) (Key, error) {
+func FetchDepotKey(depotId string, token string, path string) (api.Key, error) {
 	req, _ := http.NewRequest("GET",
-		"https://unsteam.cloudflare-delivery914.workers.dev/key?id=" + depotId, nil)
-	req.Header.Set("Authorization", "Bearer " + token)
-	
+		"https://unsteam.cloudflare-delivery914.workers.dev/key?id="+depotId, nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
 	resp, err := http.DefaultClient.Do(req)
-	defer resp.Body.Close()
-	
-	var key Key
-	if err = json.NewDecoder(resp.Body).Decode(&key); err != nil {
-		return Key{}, err
+	if err != nil {
+		return api.Key{}, err
 	}
-	
-	if err = os.WriteFile(path + depotId + ".txt", []byte(depotId+";"+key.Value), 0644); err != nil {
+	defer resp.Body.Close()
+
+	var key api.Key
+	if err = json.NewDecoder(resp.Body).Decode(&key); err != nil {
+		return api.Key{}, err
+	}
+
+	if err = os.WriteFile(path+depotId+".txt", []byte(depotId+";"+key.Value), 0644); err != nil {
 		return key, err
 	}
-	
+
 	return key, nil
 }

@@ -1,9 +1,9 @@
-package main
+package app
 
 import (
+	"bytes"
 	"context"
 	"errors"
-	"bytes"
 	"os/exec"
 )
 
@@ -24,11 +24,10 @@ func runDepotDownloader(appId string, keyFile string, depotId string, manifestId
 		"-manifest", manifestId,
 		"-manifestfile", manifestFile,
 	)
-	manifestFile = manifestFile
 
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
-	
+
 	if err := cmd.Run(); err != nil {
 		return errors.New(err.Error() + stderr.String())
 	}

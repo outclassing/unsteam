@@ -1,4 +1,4 @@
-package main
+package api
 
 import "fmt"
 
@@ -19,18 +19,18 @@ type Manifest struct {
 }
 
 type Key struct {
-	Value	string	`json:"value"`
-	Source	string	`json:"source"`
+	Value  string `json:"value"`
+	Source string `json:"source"`
 }
 
-func steamDepotUrl(appId string) string {
+func SteamDepotUrl(appId string) string {
 	return "https://manifest.steam.run/api/depot/" + appId
 }
 
-func steamManifestUrl(id string) string {
+func SteamManifestUrl(id string) string {
 	return "https://manifest.steam.run/api/manifest/" + id
 }
 
-func steamCdnManifestUrl(depotId string, manifestId string, content string) string {
+func SteamCdnManifestUrl(depotId string, manifestId string, content string) string {
 	return fmt.Sprintf("https://steampipe.akamaized.net/depot/%s/manifest/%s/5/%s", depotId, manifestId, content)
 }
