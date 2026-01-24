@@ -1,0 +1,7 @@
+# go build
+bin/
+
+# unsteam data
+data/
+depots/
+tools/
