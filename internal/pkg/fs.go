@@ -1,69 +1,96 @@
 package pkg
 
 import (
+	"bufio"
 	"context"
 	"errors"
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/hashicorp/go-extract"
 )
 
-func EnsureDir(path string) {
-	os.MkdirAll(path, os.ModePerm)
+func EnsureDir(path string) error {
+	return os.MkdirAll(path, os.ModePerm)
+}
+
+func DeleteDir(path string) error {
+	return os.RemoveAll(path)
 }
 
 func Env(name string) (string, error) {
-	value := os.Getenv(name)
-	if value == "" {
-		return "", errors.New("Environment variable not set: " + name)
+	v := os.Getenv(name)
+	if v == "" {
+		return "", errors.New("env var not found")
 	}
-	return value, nil
+	return v, nil
 }
 
-func FolderSize(path string) (int64, error) {
-	var size int64
-	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			size += info.Size()
-		}
-		return nil
-	})
-
+func WriteFile(path string, data []byte) error {
+	out, err := os.Create(path)
 	if err != nil {
-		return 0, err
+		return err
 	}
+	defer out.Close()
 
-	return size, nil
+	if err = os.WriteFile(path, data, os.ModePerm); err != nil {
+		return err
+	}
+	return nil
 }
 
-func ExtractArchive(path string, ctx context.Context) error {
-	dir := filepath.Dir(path)
+func Extract(path string) error {
 	f, err := os.Open(path)
 	if err != nil {
 		return err
 	}
 
-	if err = extract.Unpack(ctx, dir, f, extract.NewConfig()); err != nil {
+	if err = extract.Unpack(context.Background(), filepath.Dir(path), f, extract.NewConfig()); err != nil {
 		return err
 	}
 
 	if err = os.Remove(path); err != nil {
 		return err
 	}
-
-	if err = os.Rename(filepath.Join(dir, "z"), path); err != nil {
-		return err
-	}
 	return nil
 }
 
-func RemoveAll(path string) error {
-	if err := os.RemoveAll(path); err != nil {
+func Execute(path string, args [][]string) error {
+	flat := []string{}
+
+	for _, pair := range args {
+		if len(pair) != 2 {
+			return errors.New("invalid arg")
+		}
+		flat = append(flat, pair[0], pair[1])
+	}
+
+	cmd := exec.Command(
+		path,
+		flat...,
+	)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
 		return err
 	}
+
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	go func() {
+		scanner := bufio.NewScanner(stdout)
+		for scanner.Scan() {
+			fmt.Println(scanner.Text())
+		}
+	}()
+
+	if err := cmd.Wait(); err != nil {
+		return err
+	}
+
 	return nil
 }
